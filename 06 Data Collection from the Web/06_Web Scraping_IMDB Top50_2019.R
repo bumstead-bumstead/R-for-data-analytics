@@ -14,9 +14,9 @@ url <- 'https://www.imdb.com/search/title/?groups=top_250&sort=user_rating'
 start <- proc.time()
 imdb_top_50 <- data.frame()
 cnt <- 1
-a<-read_html(url) %>% html_nodes('h3.lister-item-header') #h3 ³ëµå¸¦ µû¿Â °Í. ÀÌÁ¦ a·Î½ÃÀÛÇÏ´Â node¤©¸¦ µû¾ßÇÔ.
-tmp_list <- read_html(url) %>% html_nodes('h3.lister-item-header') %>% #node¿¡¼­ .Àº class¸¦ ÀÇ¹Ì
-  html_nodes('a[href^="/title"]') %>% html_attr('href')#a·Î ½ÃÀÛÇÏ´Âµ¥ '/title'À» Æ÷ÇÔÇÏ°íÀÖ´Â ÆÄÆ®¸¸ µû¿Í¶ó?
+a<-read_html(url) %>% html_nodes('h3.lister-item-header')
+tmp_list <- read_html(url) %>% html_nodes('h3.lister-item-header') %>% 
+  html_nodes('a[href^="/title"]') %>% html_attr('href')
 
 for( i in 1:5){
   
@@ -24,8 +24,8 @@ for( i in 1:5){
   tmp_content <- read_html(tmp_url)
   
   # Extract title and year
-  title_year <- tmp_content %>% html_nodes('div.title_wrapper > h1') %>% html_text %>% str_trim # >´Â µÎ °³¸¦ ÇÑ¹ø¿¡ Ã³¸®. sub °ü°è¸¦ ÀÇ¹Ì/ title._wrapperÀÇ ÇÏÀ§³ëµå h1À» µû¿Í¶ó.
-  tmp_title <- substr(title_year, 1, nchar(title_year)-7)               #html_text´Â ¹¹Áö     #str_trimÀº °ø¹é Á¦°Å
+  title_year <- tmp_content %>% html_nodes('div.title_wrapper > h1') %>% html_text %>% str_trim
+  tmp_title <- substr(title_year, 1, nchar(title_year)-7)
   tmp_year <- substr(title_year, nchar(title_year)-4, nchar(title_year)-1)
   tmp_year <- as.numeric(tmp_year)
   
@@ -34,7 +34,7 @@ for( i in 1:5){
   tmp_rating <- as.numeric(tmp_rating)
   
   # Rating counts
-  tmp_count <- tmp_content %>% html_nodes('span.small') %>% html_text #class°¡ smallÀ¸·Î µÇ¾îÀÖÀ¸¹Ç·Î ½±°Ô °¡Á®¿Ã ¼ö ÀÖÀ½?
+  tmp_count <- tmp_content %>% html_nodes('span.small') %>% html_text
   tmp_count <- gsub(",", "", tmp_count)
   tmp_count <- as.numeric(tmp_count)
   
@@ -47,7 +47,7 @@ for( i in 1:5){
   tmp_director <- sub("Director:\n", "", tmp_director)
   
   tmp_writer <- tmp_dws[2] %>% str_trim
-  tmp_writer <- sub("Writers:\n", "", tmp_writer) #| Áö¿ì´Â °Å Á÷Á¢Ã£¾Æ¼­ ¾²±â special character
+  tmp_writer <- sub("Writers:\n", "", tmp_writer)
   
   tmp_stars <- tmp_dws[3] %>% str_trim
   tmp_stars <- strsplit(tmp_stars, "\nSee")[[1]][1]
@@ -64,14 +64,14 @@ for( i in 1:5){
     
     cat("Scraping the", j, "-th review of the", i, "-th movie. \n")
     
-    tryCatch({#¿À·ù°¡ ¹ß»ıÇÒ ½Ã °Ç³Ê¶Ù°Ô ÇÔ.
+    tryCatch({
       
       # Review rating 
-      tmp_info <- tmp_review[j] %>% html_nodes('span.rating-other-user-rating > span') %>% html_text#span class nodeÀÇ atomicÀÓ.
+      tmp_info <- tmp_review[j] %>% html_nodes('span.rating-other-user-rating > span') %>% html_text#span class nodeì˜ atomicì„.
       tmp_review_rating <- as.numeric(tmp_info[1])
       
       # Review title
-      tmp_review_title <- tmp_review[j] %>% html_nodes('a.title') %>% html_text #a·Î ½ÃÀÛÇÏ´Â nodeÀÌ°í, class°¡ titleÀÎ °Í °¡Á®¿Í¶ó
+      tmp_review_title <- tmp_review[j] %>% html_nodes('a.title') %>% html_text #aë¡œ ì‹œì‘í•˜ëŠ” nodeì´ê³ , classê°€ titleì¸ ê²ƒ ê°€ì ¸ì™€ë¼
       tmp_review_title <- tmp_review_title %>% str_trim
       
       # Review text
