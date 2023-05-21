@@ -1,0 +1,103 @@
+---
+title: "Assignment4 Plots"
+author: "2018170837 이요환"
+date: '2019-12-04'
+output:
+  html_document:
+    df_print: paged
+---
+
+Assignment4 ploting 과제 제출물입니다.
+
+#Drawing five different plots based on the collected data.
+```{r}
+
+library('ggplot2')
+library('dplyr')
+
+Stackoverflow_QA <- read.csv('Stackoverflow_QA.csv')
+
+```
+plotting에 필요한 준비 과정
+
+
+
+#1. 답변의 수와 조회수의 관계를 나타낸 scatter plot
+```{r}
+SOF <- tbl_df(Stackoverflow_QA)
+
+first <- SOF %>% group_by(Title) %>% summarise(n_answer = n_distinct(Answer), n_view = first(Views))
+ggplot(first,aes(x=n_answer, y=n_view)) + geom_jitter() + ylim(c(0,20000)) + xlim(c(0,7.5)) + geom_smooth()
+
+```
+잡변의 수와 조회수가 양의 관계를 가질 것이라 생각하고 답변과 조회수의 관계를 나타낸 jitter, smooth plot을 그렸다. 질문 별로 answer에 개수만큼 행이 존재하므로 Title을 기준으로 group_by한 후 답변의 개수와 조회수를 각각 가져와 바로 그래프를 그릴 수 있도록 했다. 또한 그래프를 보기 편하게 하기 위해 극단적인 값을 삭제했다. 
+산포도와 smooth 그래프를 보면, 답변의 수와 조회수는 양의 관계를 갖는다는 것을 알 수 있었다.
+
+
+#2. 작성 년도 histogram
+```{r}
+Stackoverflow_QA$Year <- substr(Stackoverflow_QA$Date, 1, 4) %>% as.numeric()
+ggplot(Stackoverflow_QA, aes(x=factor(Year), fill = factor(Year))) + geom_bar()
+
+```
+작성년도의 histogram을 그려 stackoverflow 사이트의 이용자가 많은, 혹은 blockchain에 대한 사람들의 관심이 컸던 년도를 알아보고자 했다. Date column의 문자열을 수정해 Year이라는 새로운 열을 만들어내 barplot을 그려냈다.
+2008, 2017, 2018년에 블록체인에 대한 질문이 많았다는 것을 알 수 있었다.
+
+
+#3. 댓글이 있는 글과 없는 글의 제목 글자수 분포 violin plot
+```{r}
+
+third <- SOF %>% group_by(Title) %>% summarise(n_title = nchar(first(Title)), Tcom = first(Q_comments))
+third[is.na(third)] <- 0
+third$Tcom[third$Tcom != 0] <- 1 
+
+ggplot(third, aes(x=Tcom, y=n_title, fill = Tcom)) + geom_violin() + geom_boxplot() 
+
+```
+제목을 자세히 쓸 수록 사람들의 답변이 더 많을 것이라 생각해 댓글의 유무 여부와 제목 글자수의 분포를 나타낸 violin plot을 그렸다. 댓글이 없는 경우에는 Q_comments가 NA이므로 이를 0으로 바꾸고, 그렇지 않은경우를 1로 바꿔 binary의 형태롤 만들고 이를 저장한 Tcom과 title의 character 개수를 센 n_title을 비교한 plot을 그렸다. 추가적인 정보를 제공하기 위해 boxplot도 함께 나타냈다.
+  Tcom이 다를 때 분포의 차이가 크지 않은 것으로 보아 댓글의 유무 여부와 글의 제목 글자수는 큰 상관관계가 없는 것으로 보인다.
+
+
+
+#4. 조회수와 제목글자수 + 본문글자수 관계 나타낸 wrap plot
+```{r}
+forth <- SOF %>% group_by(Title) %>% summarise(n_word = nchar(first(Title)) + nchar(first(Question)), viewed = first(Views))
+
+ggplot(forth, aes(x=n_word, y=viewed)) + geom_density2d() + xlim(c(0,1900)) + ylim(c(0,500))
+```
+조회수와 질문 작성자가 작성한 총 글자수의 관계를 알 수 있는 wrap plot을 그렸다.
+위의 문제들과 같이 Title 기준으로 group_by 한 뒤 summarise 함수로 제목 글자수와 본문 글자수를 더한 column인 n_word와 view column을 만들어 낸 뒤 density2d plot을 그렸다. 데이터를 보기 쉽게 하기 위해 x, y의 limit을 정했다. 
+그래프를 통해 총 글자수는 약 350~450, 조회수는 약 60~120 정도에 가장 많이 분포하고, 글자수가 극단적으로 크거나 작은 경우보다 평균에 가까울 때 조회수가 더 높은 경우가 있다는 사실을 알 수 있었다.
+
+
+
+#5. 총 comments 개수 (본문 댓글 + 답변 댓글) vs 조회수 
+```{r}
+ncomments2 <- c()
+
+SOF[is.na(SOF)] <- 0
+
+ncomments_Q <- strsplit(SOF$Q_comments, 'OOO')
+ncomments_A <- strsplit(SOF$A_Comments, 'OOO')
+Stackoverflow_QA[35,8]
+for (i in c(1:322)) {
+  ncomments2 <- c(ncomments2, length(ncomments_Q[[i]])+length(ncomments_A[[i]]))
+}
+SOF[,9] <- ncomments2
+names(SOF)[9] <- 'n_comments'
+
+fifth <- SOF %>% group_by(Title) %>% summarise(ncomments = first(n_comments), viewed = first(Views))
+
+
+library(ggExtra)
+
+p <- ggplot(fifth, aes(x=ncomments, y=viewed, color=ncomments)) + geom_jitter() + xlim(c(0,10)) + ylim(c(0,2000))
+
+ggMarginal(p, type='histogram', fill = 'transparent')
+```
+총 comments의 개수와 조회수의 관계를 나타낸 jitter plot과 ggExtra 패키지를 이용해 가장자리에 histogram을 추가로 그렸다. 댓글이 없는 경우에 NA를 모두 0으로 바꿨고, strsplit함수를 이용해 본문, 답변 댓글 모두를 OOO를 기준으로 나눈 뒤 원소 개수를 셈으로써 댓글의 개수를 얻을 수 있었다. 이를 데이터프레임에 n_comments 라는 이름으로 새로운 행으로 추가하고 Title 기준으로 group_by한 뒤 view와 ncomments를 비교하기 위한 데이터프레임을 만들었다. 
+그래프를 보면 답변의 개수는 약 2~3개가 가장 많으며, 조회수는 약 0~100에 많이 분포한다는 사실을 알 수 있었다.
+
+
+
+

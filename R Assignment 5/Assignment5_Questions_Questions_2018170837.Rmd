@@ -1,0 +1,205 @@
+---
+title: "Assignment 5"
+author: "이요환"
+date: '2019-12-10'
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+
+## R Programming for Data Analytisc - Assignment 5
+### Data Manipulation with dplyr
+
+Write your own script with the pipe operator and appropriate verbs provided by the **dplyr** package to answer the following questions.
+
+```{r}
+install.packages("dplyr")
+library(dplyr)
+```
+
+
+Use the **fighting_games.csv** file.
+```{r}
+data1 <- read.csv("fighting_games.csv")
+```
+
+#### Q1: Find the name of winners who satisfy all the conditions below:
+1. Both fighters are older than 30
+2. The number of rounds is 5
+3. The weight class is either **Lightweight** or **Heavyweight**.
+4. The matches are title matches.
+5. The referee's name is **Herb Dean**.
+6. The winner side is blue.
+
+```{r}
+data1 %>% filter(R_age > 30 & B_age > 30, no_of_rounds == 5, weight_class == 'Lightweight' | weight_class == 'Heavyweight', title_bout == 'True', Referee == 'Herb Dean', Winner == 'Blue') %>% select(B_fighter)
+```
+1~6번 모두 모두 특정 조건을 만족시키는 row를 걸러내는 작업을 필요로 했기 때문에 filter 함수에 조건문을 사용해 찾아냈다. 
+1번 조건은 R_age > 30 & B_age > 30로, 각 코너의 선수의 나이가 저장되어있는 column인 R_age와 B_age가 동시에 30보다 크도록 했다.
+2번 조건은 no_of_rounds == 5로, rounds의 수가 저장된 column인 no_of_rounds가 5인 경우만 가져왔다.
+3번 조건은 weight_class == 'Lightweight' | weight_class == 'Heavyweight'로, weight class가 Lightweight와 Heavyweight 둘 중 하나여야하기 때문에 or의 의미를 갖는 | 부호를 이용했다.
+4번 조건은 title_bout == 'True'로, 타이틀 매치인 지가 저장된 title_bout column 에서 True인 경우만을 가져왔다. 
+5번 조건은 Referee == 'Herb Dean'로, 심판의 이름이 저장된 Referee column이 Herb Dean인 경우만을 가져왔다.
+6번 조건은 Winner == 'Blue'로, 승자가 Blue인 경우만을 가져왔고, 위 조건을 모두 만족시키는 row 중에 선수의 이름을 출력해야하기 때문에 select함수를 이용해 B_fighter column을 출력하도록 했다.
+
+
+#### Q2: Who win the most games in the Red Side?
+
+```{r}
+data1 %>% filter(Winner == 'Red') %>% group_by(R_fighter) %>% summarise(n_win  = n()) %>% filter(n_win == max(n_win)) %>% select(R_fighter)
+```
+가장 먼저, Red side 끼리만 비교해야 하므로 filter함수로 승자가 Red인 경우만을 선택했고 group_by와 summarise를 이어서 사용해 R_fighter을 기준으로 n_win 변수에 R_fighter의 수를 저장했다. 다시말해, 선수 별로 승리 수를 나타냈다. 그 중에서 max함수를 filter와 함께 사용해 가장 큰 경우를 가져왔고, select 함수로 해당 선수의 이름을 출력했다.
+
+
+#### Q3: Create a new column named "Winner" and contains the winner of the game. Print the following three columns - (R_fighter, B_fighter, Winner)
+
+```{r}
+#1
+winnR <- data1 %>% filter(Winner == "Red") %>% mutate(Winner = R_fighter)
+winnB <- data1 %>% filter(Winner == "Blue") %>% mutate(Winner = B_fighter)
+b <- rbind(winnR, winnB) %>% select(R_fighter, B_fighter, Winner)
+
+#2
+data1 %>% mutate(Winner = ifelse(Winner == "Red", as.character(R_fighter), ifelse(Winner == "Blue", as.character(B_fighter), NA))) %>% select(R_fighter, B_fighter, Winner)
+
+
+```
+winnR 변수에 filter함수로 승자가 Red인 row만 가져온 후, mutate 함수를 이용해 R_fighter 선수 이름을 Winner2라는 새로운 column을 생성해 따로 저장했다.
+winnB 변수에도 위와 같은 방법으로 Blue팀의 선수 승자의 이름을 저장했고, rbind 함수를 이용해 두 데이터프레임을 row 방향으로 합쳤다. 여기에 select 함수로 R_fighter, B_fighter, Winner2 column만을 출력함으로써 각 경기별 선수의 이름과 승자를 나타낸 데이터프레임을 만들 수 있었다. 위 방법은 Red, Blue 순으로 정렬되어서 출력된다. 
+두번째 방법은, ifelse 함수를 이중으로 사용했다. 먼저 승자가 Red 측인 경우 R_fighter의 이름을, 그렇지 않은 경우 중 승자가 Blue 축인 겨웅엔 B_fighter의 이름을, 둘 다 해당되지 않는 경우엔 NA 값이 출력되도록 하는 새로운 column을 만든 뒤 select 함수로 세 column을 가져왔다.
+
+
+
+
+#### Q4: Who win the most games and how many games did he/she win? You can use the result of the Q3.
+```{r}
+b %>% group_by(Winner) %>% summarise(n_win = n()) %>% filter(n_win == max(n_win))
+```
+3번의 결과를 그대로 가져와 Winner을 기준으로 group_by 한 뒤 summarise함수에 n()을 이용해 승리 수를 보여주는 n_win column을 만든 뒤 filter 함수로 가장 큰 row만을 출력하게 했다.
+
+#### Q5: Find the top 30 fighters according to the number of wins. Show the name of fighers and the number of wins by ascending order of rank. You can use the results from the previous questions. Use 'min' for the rank "ties.method".
+```{r}
+b %>% group_by(Winner) %>% summarise(n_win = n()) %>% mutate(rank = rank(n_win, ties.method = c('min'))) %>% arrange(desc(rank)) %>% filter(rank >= 1237) 
+
+```
+4번에서 n_win column을 만든 것까지만 가져왔다. mutate, rank 함수로 n_win의 수를 기준으로 하는 rank column을 만들었고, ties.method를 min으로 설정해서 n_win이 같은 경우에는 낮은 rank로 같은 값을 갖는다. arrange함수를 이용해 이를 내림차순으로 정리했고 가장 높은 rank가 1267이었기 때문에 filter 함수로 1237 이상인 경우만 가져왔다. 
+
+
+Use the **raw_fighter_details.csv** file to answer the following questions.
+```{r}
+data2 <- read.csv("raw_fighter_details.csv")
+```
+
+#### Q6: Find the number of Orthodox, Southpaw, Switch, Open Stance, and Sideways. Ignore other values.
+```{r}
+data2 %>% filter(Stance == 'Orthodox' | Stance == 'Southpaw' | Stance == 'Switch' | Stance == 'Open Stance' | Stance == 'Sideways') %>% group_by(Stance) %>% summarise(n_stance = n())
+```
+Orthodox, Southpaw, Switch, Open Stance, and Sideways 외의 다른 경우는 제외하기 위해 filter 함수를 이용해서 위 다섯 경우만을 가져왔고, group_by와 summarise함수를 같이 이용해 Stance를 기준으로 각각의 개수를 나타낸 n_stance라는 새로운 column을 만들어서 출력했다.
+
+
+#### Q7: What is the mean value of Reach? Ignore NA values
+```{r}
+nn <- sapply(data2$Reach, nchar)
+which(n_ != 2 | NA) #Reach가 100을 넘는 경우가 있는 지 확인
+
+data2$Reach <- substr(data2$Reach, 1, 2) %>% as.numeric()
+
+data2 %>% filter(!is.na(Reach)) %>% summarise(mean_reach = mean(Reach))
+```
+Reach는 팔 길이와 "로 이루어진 문자열 형태로 저장이 되어있었기 때문에 substr함수로 앞의 두 글자만을 가져와 (Reach의 길이가 모두 십의 자리 수이기 때문에) 숫자열의 형태로 바꿈으로써 정보가 없는 경우는 NA로 변경하고 Reach column의 데이터 전처리를 했다. 
+이 상태에서, filter함수에 !is.na함수를 이용해 NA인 데이터를 모두 제외했고 Reach의 값들의 평균을 summarise함수를 이용해 나타냈다.
+
+
+Use the **appstore_games.csv** file to answer the following questions.
+```{r}
+data3 <- read.csv("appstore_games.csv")
+```
+
+#### Q8: List the name of games satisfying the following conditions:
+1. The number of user ratings is greater than 1000.
+2. Price is higher han 0.99.
+3. The average user rating is greater than 4.0.
+4. The size is greater than the average app size (excluding NA values).
+5. Age rating is higher than 12.
+
+```{r}
+a <- data3 %>% filter(!is.na(Size)) %>% summarise(mean(Size))
+data3$Age.Rating 
+
+data3 %>% filter(!is.na(Size)) %>% filter(User.Rating.Count > 1000, Price > 0.99, Average.User.Rating > 4.0, Size > a[[1]], Age.Rating == '12+' | Age.Rating == '17+') %>% select(Name) #12보다 큰경우는 Age.Rating이 17+, 12+ 두경우 밖에 없다.
+```
+1번 문제와 같은 방식으로 filter함수를 중점적으로 이용했다. 우선 NA값을 제외하기 위해 filter함수에 !is.na함수를 이용했다.
+먼저 1번 조건은 User.Rating.Count > 1000로, 평점의 수가 저장되어있는 User.Rating.Count column이 1000보다 큰 경우만을 가져왔다.
+2번 조건은 Price > 0.99로, 가격이 저장된 column인 Price가 0.99보다 큰경우만을 가져옴으로써 해결했다.
+3번 조건은 Average.User.Rating > 4.0로, 평균 평점이 저장된 column인 Average.user.Rating에서 유저들의 평균 평점이 4보다 큰 경우를 가져왔다.
+4번 조건은 average app size를 보여주는 column이 없기 때문에 a라는 새로운 변수에 용량의 평균값을 저장했다. 먼저 NA인 값을 제외하고, summarise함수에 mean함수를 사용해 Size column을 평균냈다. 그리고 이 a 변수와 Size함수를 비교함으로써 평균보다 큰 경우만을 가져올 수 있었다. Size > a[[1]] 
+5번 조건은 Age.Rating == '12+' | Age.Rating == '17+'으로, Age.Rating이 12보다 큰경우는 17+, 12+ 두 가지 경우 뿐이기 때문에 둘 중 하나라도 해당되는 경우를 가져왔다.
+
+
+
+#### Q9: What are the top 5 games according to the total rating? Create a new column for total rating which can be computed as average user rating * user rating count.
+
+```{r}
+data3 %>% mutate(total_rating = Average.User.Rating * User.Rating.Count) %>% arrange(desc(total_rating))%>% head(5) %>% select(Name) 
+```
+가장 먼저 mutate함수를 이용해 유저의 평균 평점과 평점 수를 곱한 값인 total_rating이라는 새로운 column을 만들고, arrange 함수에 desc함수를 이용해 내림차순으로 정렬한 뒤 head 함수로 상위 다섯 개의 row만을 남기고 select로 게임의 이름을 가져왔다.
+
+
+#### Q10: What is the average user ratings of all games with age rating 17+?
+
+```{r}
+#average user rating의 평균을 출력
+data3 %>% filter(Age.Rating == '17+', !is.na(Average.User.Rating)) %>% summarize(mean_Average.User.Rating = mean(Average.User.Rating))
+
+#해당조건을 만족시키는 모든 row의 average user ratings 출력
+data3 %>% filter(Age.Rating == '17+') %>% select(Average.User.Rating)
+```
+문제를 두 가지로 이해할 수 있을 것 같아 두 가지를 모두 만들어봤다.
+첫 번째는 filter함수를 이용해 Age.Rating이 17+인 것, 즉 17세 이상 게임인 것과, 평균 평점이 없는 경우 (Average.User.Rating이 NA인 경우)를 제외했고, summarise, mean 함수를 이용해 평균평점을 다시 평균내어 출력했다.
+두 번째는 위와 같은 방식에서 NA인 경우를 제외하지 않고 Age.Rating이 17+인 경우에서 바로 Average.User.Rating column을 출력하도록 했다.
+
+#### Q11: Extract **Name** of applications that are more expensive than $4 and received user ratings more than 5000 times.
+
+```{r}
+data3 %>% filter(Price > 4, User.Rating.Count > 5000) %>% select(Name)
+```
+filter 함수를 이용해 Price가 4보다 크고, User.Rating.Count column이 5000보다 큰 row만을 가져왔고, 이중에서 어플리케이션의 이름만을 가져오기 위해 select 함수를 이용했다.
+
+
+#### Q12: How many games do not have price information?
+
+```{r}
+data3 %>% filter(is.na(Price)) %>% summarise(number_of_noneinfo = n())
+```
+가격 정보가 없다는 것은 Price 변수가 NA라는 것이기 때문에 filter함수로 이러한 row만을 가져왔고, summarise, n() 함수를 이용해 이러한 경우의 수를 세어냈다.
+
+#### Q13: What are the mean price of applications developed by **BLUE** (Developer column) whose Primary Genre is **Games**? Ingore the games whose price is NA.
+
+```{r}
+data3 %>% filter(!is.na(Price), Developer == 'BLUE', Primary.Genre == 'Games') %>% summarise(mean(Price))
+```
+filter함수를 이용해 Developer의 이름이 BLUE이고, 기본 장르가 Games인 경우만을 불러왔고, 이 중에서 다시 summarise, mean함수를 이용해 가격의 평균을 출력해냈다.
+
+
+#### Q14: How many unique developers are there?
+
+```{r}
+data3 %>% summarise(Unique_deveopers = n_distinct(Developer))
+```
+summarise함수와 특정한 값의 개수를 세는 함수인 n)distinct함수를 사용해 쉽게 얻을 수 있었다.
+
+#### Q15: Arrange the mean price of games according to Age Rating in an ascending order.
+```{r}
+c <- data3 %>% filter(!is.na(Price)) %>% group_by(Age.Rating) %>% summarise(mean_price = mean(Price))
+
+for (i in c(1:length(c$Age.Rating))) {
+  c[i,3] <- substr(c$Age.Rating[i], 1, nchar(as.character(c$Age.Rating[i]))-1) %>% as.numeric()
+}
+
+c %>% arrange(V3) %>% select(Age.Rating, mean_price)
+
+```
+먼저 price정보가 없는 경우를 filter 한 후 Age.Rating을 기준으로 group_by해 summarise 함수로 age.rating 별로 평균 가격을 나타낸 데이터프레임을 만들어 낸 후 c 변수에 저장했다. 
+age를 기준으로 오름차순으로 정렬하기 위해 for문을 이용해 age.rating에서 + 부호를 제거하고 숫자열 형태로 바꾼 뒤 c의 세번째 column에 저장했다. 그리고 다시 c를 세번째 column 즉 age를 기준으로 arrange한 뒤 Age.Rating과 mean_price만이 출력되게 했다.

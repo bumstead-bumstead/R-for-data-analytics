@@ -1,0 +1,248 @@
+---
+title: "Assignment 5"
+author: "Your Name"
+date: 'Assignment Completion Date'
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+
+## R Programming for Data Analytisc - Assignment 5
+### Data Manipulation with dplyr
+
+Write your own script with the pipe operator and appropriate verbs provided by the **dplyr** package to answer the following questions.
+
+```{r}
+# install.packages("dplyr")
+library(dplyr)
+```
+
+
+Use the **fighting_games.csv** file.
+```{r}
+data1 <- read.csv("fighting_games.csv")
+```
+
+#### Q1: Find the name of winners who satisfy all the conditions below:
+1. Both fighters are older than 30
+2. The number of rounds is 5
+3. The weight class is either **Lightweight** or **Heavyweight**.
+4. The matches are title matches.
+5. The referee's name is **Herb Dean**.
+6. The winner side is blue.
+
+```{r}
+Q1 <- data1 %>% filter(B_age > 30, R_age > 30) %>% filter(no_of_rounds == 5) %>%
+  filter(weight_class %in% c("Lightweight", "Heavyweight")) %>%
+  filter(title_bout == "True") %>% filter(Referee == "Herb Dean") %>%
+  filter(Winner == "Blue") %>% select(B_fighter)
+
+Q1.1 <- data1 %>% filter(B_age > 30, R_age > 30) %>% filter(no_of_rounds == 5) %>%
+  filter(weight_class %in% c("Lightweight", "Heavyweight")) %>%
+  filter(as.logical(title_bout) == TRUE) %>% filter(Referee == "Herb Dean") %>%
+  filter(Winner == "Blue") %>% select(B_fighter)
+# Factor형태의 True를 logical 형태로 바꿈
+```
+
+#### Q2: Who win the most games in the Red Side?
+
+```{r}
+Q2 <- data1 %>% filter(Winner == "Red") %>%
+  group_by(R_fighter) %>%
+  summarise(count=n()) %>%
+  filter(count==max(count)) %>%
+  select(R_fighter)
+
+Q2.1 <- data1 %>% filter(Winner == "Red") %>%
+  group_by(R_fighter) %>%
+  summarise(count=n()) %>%
+  mutate(rank = rank(desc(count))) %>%
+  filter(rank == 1) %>%
+  select(R_fighter)
+# rank를 세운 후, 1인 것을 추출한다.
+
+Q2.2 <- data1 %>% filter(Winner == "Red") %>%
+  count(R_fighter) %>%
+  filter(n==max(n)) %>%
+  select(R_fighter)
+#group_by와 summarise를 count로 한번에 표현가능하다.
+```
+
+#### Q3: Create a new column named "Winner" and contains the winner of the game. Print the following three columns - (R_fighter, B_fighter, Winner)
+
+```{r}
+Q3 <- data1 %>% mutate(Winner = ifelse(Winner == "Red", as.character(R_fighter), 
+                                       ifelse(Winner == "Blue", as.character(B_fighter), NA))) %>%
+  select(R_fighter, B_fighter, Winner)
+#무승부인 경우, NA를 넣어 Winner가 없는 것을 반영함.
+```
+
+#### Q4: Who win the most games and how many games did he/she win? You can use the result of the Q3.
+```{r}
+Q4 <- Q3[!is.na(Q3$Winner), ] %>%
+  group_by(Winner) %>%
+  summarise(count=n()) %>%
+  filter(count==max(count))
+  
+Q4.1 <- Q3[!is.na(Q3$Winner), ] %>% 
+  count(Winner) %>%
+  filter(n==max(n))
+# consider another way to remove na's.
+```
+
+#### Q5: Find the top 30 fighters according to the number of wins. Show the name of fighers and the number of wins by ascending order of rank. You can use the results from the previous questions. Use 'min' for the rank "ties.method".
+```{r}
+Q5 <- Q3[!is.na(Q3$Winner), ] %>% count(Winner) %>% 
+  mutate(rank = rank(desc(n), ties.method = "min")) %>%
+  arrange(rank) %>%
+  filter(rownames(.) %in% seq(1,30))
+# 30번째까지 하면 rank 20까지 나오는데, rank 20은 11명으로, Vitor Belfort가 마지막인데 이 사람이 우연히 30번째에 위치한다.
+# 30번째를 넘어서도 rank 20이 존재하면 ABC순에 의해 rank 20임에도 30번째 안에 들지 못하는 사람이 있을 수 있는데,
+# 이에 대한 추가적인 고민을 하지 않아도 된다.
+# 마지막 filter대신 head(30) 을 하여도 같은 결과가 나온다.
+```
+
+
+Use the **raw_fighter_details.csv** file to answer the following questions.
+```{r}
+data2 <- read.csv("raw_fighter_details.csv")
+```
+
+#### Q6: Find the number of Orthodox, Southpaw, Switch, Open Stance, and Sideways. Ignore other values.
+```{r}
+Q6 <- data2 %>% filter(Stance != '') %>% 
+  group_by(Stance) %>% 
+  summarise(n=n())
+```
+
+#### Q7: What is the mean value of Reach? Ignore NA values
+```{r}
+Q7.wrong <- data2 %>% summarise(mean_Reach=mean(as.numeric(Reach),na.rm=TRUE))
+# When we use the function as.numeric(), the value changes because the data is given in factor.
+
+Q7 <- data2$Reach[which(data2$Reach != "")] %>%
+  gsub('\\"', '', .) %>% 
+  as.numeric(.) %>%
+  mean(.)
+
+data2.1 <- data2
+levels(data2.1$Reach) <- gsub('"','',levels(data2$Reach))
+Q7.1 <- data2.1 %>% filter(Reach != "") %>% 
+  summarise(mean_Reach=mean(as.numeric(as.character(Reach))))
+```
+
+Use the **appstore_games.csv** file to answer the following questions.
+```{r}
+data3 <- read.csv("appstore_games.csv")
+```
+
+#### Q8: List the name of games satisfying the following conditions:
+1. The number of user ratings is greater than 1000.
+2. Price is higher than 0.99.
+3. The average user rating is greater than 4.0.
+4. The size is greater than the average app size (excluding NA values).
+5. Age rating is higher than 12.
+
+```{r}
+Q8 <- data3 %>% 
+  filter(User.Rating.Count > 1000 , Price > 0.99, Average.User.Rating > 4.0 , Size > mean(Size, na.rm=T)) %>%
+  filter(Age.Rating == '17+' | Age.Rating == '12+') %>% 
+  select(Name) %>% as.list()
+
+Q8.2 <- data3 %>% 
+  filter(User.Rating.Count > 1000 , Price > 0.99, Average.User.Rating > 4.0 , Size > mean(Size, na.rm=T)) %>%
+  filter(as.integer(gsub("\\+", "", as.character(.$Age.Rating))) >= 12) %>% 
+  select(Name) %>% as.list()
+# factor형태의 Age.Rating을 character로 바꾸어 gsub를 통해 '+'를 제거하고, 12보다 큰 것을 추출한다.
+```
+
+#### Q9: What are the top 5 games according to the total rating? Create a new column for total rating which can be computed as average user rating * user rating count.
+
+```{r}
+Q9 <- data3 %>% mutate(Total.Rating = Average.User.Rating * User.Rating.Count) %>%
+  arrange(desc(Total.Rating)) %>% 
+  select(Name, Total.Rating) %>% head(5)
+
+Q9.1 <- data3 %>% mutate(Total.Rating = Average.User.Rating * User.Rating.Count) %>%
+  select(Name, Total.Rating)
+Q9.1.1 <- head(Q9.1[order(Q9.1$Total.Rating, decreasing=T),],5)
+# arrange대신 order로 Total.Rating에 대해 내림차 순으로 정렬하고, 상위 5개만을 추출한다.
+```
+
+#### Q10: What is the average user ratings of all games with age rating 17+?
+
+```{r}
+Q10 <- data3 %>% filter(Age.Rating == '17+') %>% 
+  select(Average.User.Rating)
+#이런식으로 Average User Rating column 전부를 구하는 건가.?
+
+Q10.1 <- data3 %>% filter(Age.Rating =='17+') %>% 
+  select(User.Rating.Count) %>%
+  apply(., 2, mean, na.rm=T)
+#이런식으로 User Rating Count의 평균을 구하는 건가.?
+
+Q10.2 <- data3 %>% filter(Age.Rating == '17+') %>%
+  summarise(Aver=mean(Average.User.Rating, na.rm=T))
+#이런식으로 Average User Rating의 평균을 구하는 건가.?
+#해석에 따라 다양하게 결과가 존재할 수 있을 것 같다.
+```
+
+#### Q11: Extract **Name** of applications that are more expensive than $4 and received user ratings more than 5000 times.
+
+```{r}
+Q11 <- data3 %>% filter(Price > 4) %>%
+  filter(User.Rating.Count > 5000) %>%
+  select(Name)
+```
+
+#### Q12: How many games do not have price information?
+
+```{r}
+Q12 <- sum(is.na(data3$Price))
+#base R
+
+Q12.1 <- data3 %>% filter(is.na(Price)) %>%
+  summarise(noprice=n())
+```
+
+#### Q13: What are the mean price of applications developed by **BLUE** (Developer column) whose Primary Genre is **Games**? Ignore the games whose price is NA.
+
+```{r}
+Q13 <- data3 %>% filter(as.character(.$Developer) == "BLUE") %>% 
+  filter(as.character(.$Primary.Genre) == "Games") %>%
+  summarise(aver = mean(Price, na.rm=T))
+```
+
+#### Q14: How many unique developers are there?
+
+```{r}
+Q14 <- data3 %>% group_by(Developer) %>% 
+  summarise(n=n()) %>% 
+  nrow()
+
+Q14.1 <- table(data3$Developer) %>% 
+  dim()
+# table을 통해 Developer에 대한 frequency를 구한 후 이것의 dimension을 구하여 unique developer 수를 구한다.
+```
+
+#### Q15: Arrange the mean price of games according to Age Rating in an ascending order.
+```{r}
+Q15 <- data3 %>% 
+  group_by(as.integer(gsub("\\+", "", as.character(.$Age.Rating)))) %>%
+  summarise(MeanPrice = mean(Price, na.rm=T)) %>%
+  rename(AgeRating = "as.integer(gsub(\"\\\\+\", \"\", as.character(.$Age.Rating)))") %>%
+  mutate_if(is.integer, as.character) %>%
+  mutate(AgeRating=paste(AgeRating, "+", sep=""))
+# Age Rating에서 +를 제거하고 ascending order로 mean price of games를 arrange하기 위해
+# factor형태의 Age Rating을 정수형으로 만든 후,
+# 각 group별로 Price의 평균을 구한다.
+# column name을 간단하게 바꾸고, 
+# integer형태의 자료(AgeRating)를 character형태로 바꾸고 +를 붙여 원 형태와 같게 한다.
+
+Sys.setlocale('LC_ALL','C')
+# Warning message: In strsplit(code, "\n", fixed = TRUE) :  input string 1 is invalid in this locale
+# 코드 실행 중에 위와 같은 인코딩 warning 발생 시, Sys.setlocale()을 통해 해결하였다.
+```
+
