@@ -67,11 +67,11 @@ for( i in 1:5){
     tryCatch({
       
       # Review rating 
-      tmp_info <- tmp_review[j] %>% html_nodes('span.rating-other-user-rating > span') %>% html_text#span class node의 atomic임.
+      tmp_info <- tmp_review[j] %>% html_nodes('span.rating-other-user-rating > span') %>% html_text
       tmp_review_rating <- as.numeric(tmp_info[1])
       
       # Review title
-      tmp_review_title <- tmp_review[j] %>% html_nodes('a.title') %>% html_text #a로 시작하는 node이고, class가 title인 것 가져와라
+      tmp_review_title <- tmp_review[j] %>% html_nodes('a.title') %>% html_text 
       tmp_review_title <- tmp_review_title %>% str_trim
       
       # Review text
