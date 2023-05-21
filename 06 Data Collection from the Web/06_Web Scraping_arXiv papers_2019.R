@@ -8,9 +8,9 @@ obamaroot <- htmlParse(obamaurl)
 obamaroot
 
 # Xpath example
-xmlfile <- "xml_example.xml" #xml은 hierarcy 형태로 되어있음.
+xmlfile <- "xml_example.xml" 
 tmpxml <- xmlParse(xmlfile)
-root <- xmlRoot(tmpxml) #xmlRoot : 가장 최상위 node를 찾아옴 (bookstore)
+root <- xmlRoot(tmpxml) 
 root
 
 # Select children node
@@ -68,8 +68,6 @@ for( i in pages){
   tmp_url <- modify_url(url, query = list(start = i))
   tmp_list <- read_html(tmp_url) %>% html_nodes('p.list-title.is-inline-block') %>% 
     html_nodes('a[href^="https://arxiv.org/abs"]') %>% html_attr('href')
-  #html_nodes(): ()안의 속성을 갖는 node를 따와라
-  #node를 불러올 때 띄어쓰기는 .으로 대체함. 규칙
   for(j in 1:length(tmp_list)){
     
     tmp_paragraph <- read_html(tmp_list[j])
