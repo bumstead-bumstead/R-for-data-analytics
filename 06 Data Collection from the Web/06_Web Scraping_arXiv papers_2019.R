@@ -4,17 +4,17 @@ library("XML")
 
 # XML/HTML parsing
 obamaurl <- "http://www.obamaspeeches.com/"
-obamaroot <- htmlParse(obamaurl) #html ºÒ·¯¿È
+obamaroot <- htmlParse(obamaurl) 
 obamaroot
 
 # Xpath example
-xmlfile <- "xml_example.xml" #xmlÀº hierarcy ÇüÅÂ·Î µÇ¾îÀÖÀ½.
+xmlfile <- "xml_example.xml" #xmlì€ hierarcy í˜•íƒœë¡œ ë˜ì–´ìˆìŒ.
 tmpxml <- xmlParse(xmlfile)
-root <- xmlRoot(tmpxml) #xmlRoot : °¡Àå ÃÖ»óÀ§ node¸¦ Ã£¾Æ¿È (bookstore)
+root <- xmlRoot(tmpxml) #xmlRoot : ê°€ì¥ ìµœìƒìœ„ nodeë¥¼ ì°¾ì•„ì˜´ (bookstore)
 root
 
 # Select children node
-xmlChildren(root)[[1]]#root node¿¡¼­ ÇÏÀ§ node Áß Ã¹¹øÂ°¸¦ °¡Á®¿Â´Ù.
+xmlChildren(root)[[1]]
 
 xmlChildren(xmlChildren(root)[[1]])[[1]]
 xmlChildren(xmlChildren(root)[[1]])[[2]]
@@ -22,19 +22,19 @@ xmlChildren(xmlChildren(root)[[1]])[[3]]
 xmlChildren(xmlChildren(root)[[1]])[[4]]
 
 # Selecting nodes
-xpathSApply(root, "/bookstore/book[1]")#xpathSApply´Â xml¿¡¼­ Á¤º¸ »©¿À´Â°Å?
+xpathSApply(root, "/bookstore/book[1]")
 xpathSApply(root, "/bookstore/book[last()]")
 xpathSApply(root, "/bookstore/book[last()-1]")
 xpathSApply(root, "/bookstore/book[position()<3]")
-###°­ÀÇ ppt Æ©Åä¸®¾ó »çÀÌÆ® Âü°íÇÏÀÚ###
+
 # Selecting attributes
-xpathSApply(root, "//@category")#½½·¡½Ã µÎ°³¸é À§°è»ó°ü¾øÀÌ ÇØ´çµÇ´Â °Í ¸ğµÎ return
-xpathSApply(root, "//@lang")#@´Â attributeÀ» ÀÇ¹Ì
+xpathSApply(root, "//@category")
+xpathSApply(root, "//@lang")
 xpathSApply(root, "//book/title", xmlGetAttr, 'lang')
 
-# Selecting atomic values #xml ÄÚµå¿¡¼­ <>¾È¿¡ ÀÖ´Â °ÍÀº attribute, ±× »çÀÌ¿¡ ÀÖ´Â °ÍÀº atomic value ¶ó°í ÇÑ´Ù.
-xpathSApply(root, "//title", xmlValue)#node¿¡¼­ attributeÀº ¾ø¾îµµ µÇÁö¸¸ atomic value´Â ²À ÀÖ¾î¾ßÇÔ.
-xpathSApply(root, "//title[@lang='en']", xmlValue)#xmlvalue : atomic value °¡Á®¿È
+# Selecting atomic values
+xpathSApply(root, "//title", xmlValue)
+xpathSApply(root, "//title[@lang='en']", xmlValue)
 xpathSApply(root, "//book[@category='web']/price", xmlValue)
 xpathSApply(root, "//book[price > 35]/title", xmlValue)
 xpathSApply(root, "//book[@category = 'web' and price > 40]/price", xmlValue)
@@ -52,9 +52,9 @@ library(rvest)
 
 url <- 'https://arxiv.org/search/?query=%22text+mining%22&searchtype=all&source=header&start=0'
 
-parse_url(url) #???
+parse_url(url)
 
-start <- proc.time()#proc.time:ÇöÀç ½ÃÁ¡¿¡ ´ëÇÑ time stamp ÂïÀ½
+start <- proc.time()
 title <- NULL
 author <- NULL
 subject <- NULL
@@ -66,51 +66,51 @@ pages <- seq(from = 0, to = 335, by = 50)
 for( i in pages){
   
   tmp_url <- modify_url(url, query = list(start = i))
-  tmp_list <- read_html(tmp_url) %>% html_nodes('p.list-title.is-inline-block') %>% # %>% : ¾ÕÀÇ °á°ú¹°À» ÀÔ·ÂÀ¸·Î ¹Ş¾Æ¼­ µÚ¿¡ ÀÖ´Â °ÍÀ» ½ÇÇàÇØ¶ó.
-    html_nodes('a[href^="https://arxiv.org/abs"]') %>% html_attr('href') #a´Â attributeÀÇ ¾àÀÚ. ^Àº ¹¹ÀÓ??###
-  #html_nodes(): ()¾ÈÀÇ ¼Ó¼ºÀ» °®´Â node¸¦ µû¿Í¶ó
-  #node¸¦ ºÒ·¯¿Ã ¶§ ¶ç¾î¾²±â´Â .À¸·Î ´ëÃ¼ÇÔ. ±ÔÄ¢
+  tmp_list <- read_html(tmp_url) %>% html_nodes('p.list-title.is-inline-block') %>% 
+    html_nodes('a[href^="https://arxiv.org/abs"]') %>% html_attr('href')
+  #html_nodes(): ()ì•ˆì˜ ì†ì„±ì„ ê°–ëŠ” nodeë¥¼ ë”°ì™€ë¼
+  #nodeë¥¼ ë¶ˆëŸ¬ì˜¬ ë•Œ ë„ì–´ì“°ê¸°ëŠ” .ìœ¼ë¡œ ëŒ€ì²´í•¨. ê·œì¹™
   for(j in 1:length(tmp_list)){
     
     tmp_paragraph <- read_html(tmp_list[j])
     
     # title
-    tmp_title <- tmp_paragraph %>% html_nodes('h1.title.mathjax') %>% html_text(T)#html_text°¡ ¹¹ÀÓ???###
-    tmp_title <-  gsub('Title:', '', tmp_title)#tmp title¿¡ ´ëÇØ¼­ TitleÀ» ''·Î ´ëÃ¼ÇÔ (¾ø¾Ú)
+    tmp_title <- tmp_paragraph %>% html_nodes('h1.title.mathjax') %>% html_text(T)
+    tmp_title <-  gsub('Title:', '', tmp_title)
     title <- c(title, tmp_title)
     
     # author
-    tmp_author <- tmp_paragraph %>% html_nodes('div.authors') %>% html_text #div¿¡¼­ class´Â authorsÀÎ °ÍÀ» °¡Á®¿Â´Ù.
-    tmp_author <- gsub('\\s+',' ',tmp_author) #¸ğµç °ø¹éÀ» ÇÑÄ­ ½ºÆäÀÌ½º·Î ´ëÃ¼ÇÏ°Ú´Ù?
-    tmp_author <- gsub('Authors:','',tmp_author) %>% str_trim #str_trimÀº ÀúÀÚÀÌ¸§ ¾çÂÊ¿¡ ºóÄ­ÀÖÀ¸¸é »èÁ¦ÇÏ°Ú´Ù´Â°Å
+    tmp_author <- tmp_paragraph %>% html_nodes('div.authors') %>% html_text
+    tmp_author <- gsub('\\s+',' ',tmp_author) 
+    tmp_author <- gsub('Authors:','',tmp_author) %>% str_trim 
     author <- c(author, tmp_author)  
     
     # subject
-    tmp_subject <- tmp_paragraph %>% html_nodes('span.primary-subject') %>% html_text(T)#Information RetrievalÀº ¿Ö¾È³ª¿È?
+    tmp_subject <- tmp_paragraph %>% html_nodes('span.primary-subject') %>% html_text(T)
     subject <- c(subject, tmp_subject)
     
     # abstract
     tmp_abstract <- tmp_paragraph %>% html_nodes('blockquote.abstract.mathjax') %>% html_text(T)
-    tmp_abstract <- gsub('\\s+',' ',tmp_abstract)#ÁÙ³Ñ±è »èÁ¦??
+    tmp_abstract <- gsub('\\s+',' ',tmp_abstract)
     tmp_abstract <- sub('Abstract:','',tmp_abstract) %>% str_trim 
     abstract <- c(abstract, tmp_abstract)
     
     # meta
     tmp_meta <- tmp_paragraph %>% html_nodes('div.submission-history') %>% html_text
-  tmp_meta <- lapply(strsplit(gsub('\\s+', ' ',tmp_meta), '[v1]', fixed = T),'[',2) %>% unlist %>% str_trim #'[',2)´Â ¸®½ºÆ®¿¡¼­ µÎ¹ø Â° Ç×¸ñ¿¡ ´ëÇØ¼­¸¸ ÇØ¶ó.
+  tmp_meta <- lapply(strsplit(gsub('\\s+', ' ',tmp_meta), '[v1]', fixed = T),'[',2) %>% unlist %>% str_trim 
     meta <- c(meta, tmp_meta)
     cat(j, "paper\n")
     
   }
   cat((i/50) + 1,'/ 7 page\n')
-  Sys.sleep(3)#3ÃÊ°£ ¸ØÃã. ¼­¹ö¿¡ ºÎÇÏ°¡ °É¸®¸é IP¸¦ Â÷´ÜÇØ¹ö¸± ¼ö ÀÖ¾î¼­. »ç¶÷ÀÎÃ´
+  Sys.sleep(3)
   
 }
 papers <- data.frame(title, author, subject, abstract, meta)
-end <- proc.time()#¼Ò¿ä½Ã°£ °è»ê¿ë
+end <- proc.time()
 end - start # Total Elapsed Time
 
 # Export the result
-save(papers, file = "Arxiv_Text_Mining.RData") #RDataÇüÅÂ·Î ÀúÀå?
+save(papers, file = "Arxiv_Text_Mining.RData")
 write.csv(papers, file = "Arxiv papers on Text Mining.csv")
 
